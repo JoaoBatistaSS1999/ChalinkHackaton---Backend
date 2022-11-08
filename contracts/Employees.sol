@@ -13,6 +13,7 @@ contract Employees is Ownable {
     uint256 public monthCurrentDay = 1;
 
     string public companyName;
+    mapping(address => bool) public isAdmin;
 
     struct Employee {
         string name;
@@ -40,10 +41,22 @@ contract Employees is Ownable {
 
     event EmployeePaid(string _name, address _wallet, uint256 _amount);
 
+    event AdminAdded(address _assignee, address _newAdmin);
+
+    event AdminRemoved (address _demoter, address _employee);
+
+    modifier onlyAdmin {
+        require(isAdmin[msg.sender], "Only Admins can call this function");
+        _;
+    }
+
     constructor(address _payroll, string memory _companyName) {
         PayrollContract = Payroll(_payroll);
         companyName = _companyName;
+        isAdmin[msg.sender] = true;
     }
+
+
 
     // Create New Employee
     function addEmployee(
@@ -138,7 +151,7 @@ contract Employees is Ownable {
     }
 
     // Simulates a day of work
-    function dayOfWork() public {
+    function dayOfWork() public onlyAdmin {
 
         if (monthCurrentDay == monthSize) {
             payEmployees();
@@ -158,5 +171,17 @@ contract Employees is Ownable {
         return employee;
     }
 
+    // Setter functions
+    function setAdmin(address _address) public onlyOwner {
+        require(!isAdmin[_address], "This employee is already an admin!");
+        isAdmin[_address] = true;
+        emit AdminAdded(msg.sender, _address);
+    }
+
+    function removeAdmin(address _address) public onlyOwner {
+        require(isAdmin[_address], "This employee is not an admin!");
+        isAdmin[_address] = false;
+        emit AdminRemoved(msg.sender, _address);
+    }
 
 }
